@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Something I Need to Tell You 💌</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --rose:    #ff4d7d;
+      --blush:   #ffb3cc;
+      --deep:    #1c0015;
+      --card-bg: rgba(255,255,255,0.06);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 20% 50%, #3a0030 0%, #1c0015 55%, #0d0020 100%);
+      font-family: 'Lato', sans-serif;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* =========  PARTICLE CANVAS  ========= */
+    #canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* =========  HERO  ========= */
+    .hero {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    /* envelope opening */
+    .envelope-wrap {
+      margin-bottom: 40px;
+      cursor: pointer;
+      position: relative;
+    }
+    .envelope {
+      width: 100px;
+      height: 70px;
+      background: linear-gradient(135deg, #ff4d7d, #c2185b);
+      border-radius: 6px 6px 12px 12px;
+      position: relative;
+      box-shadow: 0 12px 40px rgba(255,77,125,0.5);
+      transition: transform 0.3s;
+    }
+    .envelope:hover { transform: scale(1.06); }
+    /* envelope lid — closed by default, opens on tap */
+    .envelope::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 50%;
+      background: linear-gradient(135deg, #ff6e95, #e91e63);
+      clip-path: polygon(0 0, 50% 65%, 100% 0);
+      border-radius: 6px 6px 0 0;
+      transform-origin: top center;
+      transform: rotateX(0deg);
+      transition: transform 0.8s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .envelope.opened::before {
+      transform: rotateX(-160deg);
+    }
+
+    /* gentle pulse to invite tap */
+    .envelope-wrap:not(.opened-wrap) .envelope {
+      animation: invitePulse 1.8s ease-in-out infinite;
+    }
+    @keyframes invitePulse {
+      0%,100% { box-shadow: 0 12px 40px rgba(255,77,125,0.5); transform: scale(1); }
+      50%      { box-shadow: 0 16px 60px rgba(255,77,125,0.85); transform: scale(1.06); }
+    }
+
+    .envelope .letter {
+      position: absolute;
+      width: 70%;
+      height: 80%;
+      background: #fff8f9;
+      border-radius: 4px;
+      top: 5%;
+      left: 15%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: transform 0.8s 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.5s 0.5s;
+    }
+    .envelope.opened .letter {
+      opacity: 1;
+      transform: translateY(-30px);
+    }
+
+    /* tap hint text */
+    .tap-hint {
+      color: rgba(255,180,200,0.7);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      margin-top: 16px;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+
+    /* hero text — hidden until envelope is tapped */
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px);
+      transition: opacity 0.8s 0.4s, transform 0.8s 0.4s;
+    }
+    .hero-content.revealed {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateY(0);
+    }
+    .tag {
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--blush);
+      margin-bottom: 14px;
+    }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 6vw, 3.8rem);
+      line-height: 1.2;
+      text-align: center;
+      margin-bottom: 22px;
+    }
+    .hero-title em {
+      font-style: italic;
+      color: var(--rose);
+      text-shadow: 0 0 30px rgba(255,77,125,0.6);
+    }
+    .hero-sub {
+      font-size: 1rem;
+      font-weight: 300;
+      color: #ffcdd8;
+      max-width: 420px;
+      text-align: center;
+      line-height: 1.8;
+      margin-bottom: 38px;
+    }
+    .scroll-hint {
+      color: rgba(255,180,200,0.5);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .scroll-hint span {
+      display: block;
+      width: 1px;
+      height: 38px;
+      background: linear-gradient(to bottom, transparent, var(--blush));
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+
+    /* =========  SECTIONS  ========= */
+    section {
+      position: relative;
+      z-index: 10;
+      padding: 80px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .section-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--rose);
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      text-align: center;
+      margin-bottom: 48px;
+      line-height: 1.3;
+    }
+
+    /* =========  REASONS GRID  ========= */
+    .reasons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      max-width: 760px;
+      width: 100%;
+    }
+    .reason-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255,150,180,0.15);
+      border-radius: 18px;
+      padding: 28px 24px;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    .reason-card.visible {
+      animation: slideUp 0.6s forwards;
+    }
+    .reason-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 48px rgba(255,77,125,0.2);
+      border-color: rgba(255,77,125,0.4);
+    }
+    .reason-card .icon { font-size: 2rem; margin-bottom: 12px; display: block; }
+    .reason-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+    .reason-card p { font-size: 0.88rem; color: #ffcdd8; line-height: 1.7; font-weight: 300; }
+
+    /* =========  LETTER SECTION  ========= */
+    .letter-box {
+      max-width: 600px;
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid rgba(255,150,180,0.18);
+      border-radius: 24px;
+      padding: 44px 44px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 0 80px rgba(255,77,125,0.1);
+    }
+    .letter-box p {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      line-height: 2;
+      color: #fff0f4;
+      font-style: italic;
+      margin-bottom: 20px;
+    }
+    .letter-box .sig {
+      font-family: 'Playfair Display', serif;
+      font-style: normal;
+      font-size: 1.2rem;
+      color: var(--rose);
+      margin-top: 10px;
+    }
+
+    /* =========  RESPONSE SECTION  ========= */
+    .response-section { min-height: 80vh; justify-content: center; }
+
+    .big-heart {
+      font-size: 5rem;
+      animation: heartbeat 1.3s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(255,77,125,0.8));
+      margin-bottom: 28px;
+    }
+    @keyframes heartbeat {
+      0%,100% { transform: scale(1); }
+      14%      { transform: scale(1.2); }
+      28%      { transform: scale(1); }
+      42%      { transform: scale(1.12); }
+    }
+
+    .response-question {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.4rem, 4vw, 2rem);
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      padding: 16px 40px;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-family: 'Lato', sans-serif;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      letter-spacing: 0.05em;
+    }
+    .btn:hover  { transform: translateY(-4px); }
+    .btn:active { transform: scale(0.95); }
+    .btn-yes {
+      background: linear-gradient(135deg, #ff4d7d, #c2185b);
+      color: #fff;
+      box-shadow: 0 8px 32px rgba(255,77,125,0.5);
+    }
+    .btn-yes:hover { box-shadow: 0 14px 44px rgba(255,77,125,0.7); }
+    .btn-no {
+      background: rgba(255,255,255,0.07);
+      color: #ffcdd8;
+      border: 1px solid rgba(255,150,180,0.3);
+    }
+    .btn-no:hover { background: rgba(255,255,255,0.12); }
+
+    /* response states */
+    #answer-area { text-align: center; }
+    .ans-hidden  { display: none; }
+    .ans-visible { animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.7) translateY(20px); }
+      to   { opacity: 1; transform: scale(1)   translateY(0); }
+    }
+    .ans-emoji { font-size: 4rem; margin-bottom: 16px; display: block; }
+    .ans-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+    .ans-sub { font-size: 1rem; color: #ffcdd8; font-weight: 300; line-height: 1.7; max-width: 380px; margin: 0 auto; }
+
+    /* =========  DIVIDER  ========= */
+    .divider {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--rose), transparent);
+      margin: 0 auto 60px;
+    }
+
+    /* =========  UTILITIES  ========= */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 0.4; }
+      50%      { opacity: 1; }
+    }
+
+    @media (max-width: 500px) {
+      .letter-box { padding: 28px 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<!-- ── Background music ── -->
+<audio id="bgMusic">
+  <source src="binibini.mp3" type="audio/mpeg">
+</audio>
+
+<div id="musicNote" style="
+  position:fixed; bottom:20px; right:20px; z-index:999;
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,150,180,0.25);
+  backdrop-filter:blur(10px); border-radius:50px;
+  padding:8px 16px; font-size:0.8rem; color:#ffb3cc;
+  display:flex; align-items:center; gap:8px;
+  opacity:0; transition:opacity 1.5s;
+  pointer-events:none;
+">
+  <span style="display:inline-block;animation:noteBounce 0.6s ease-in-out infinite alternate;">🎵</span>
+  Binibini — Brownman Revival
+</div>
+<style>
+  @keyframes noteBounce { from{transform:translateY(0)} to{transform:translateY(-4px)} }
+</style>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="envelope-wrap" id="envelopeWrap" onclick="openEnvelope()">
+    <div class="envelope" id="envelope">
+      <div class="letter">💌</div>
+    </div>
+    <p class="tap-hint">tap to open 💌</p>
+  </div>
+
+  <div class="hero-content" id="heroContent">
+    <p class="tag">ang mensahe galing sa puso ng saging</p>
+    <h1 class="hero-title">hola <em>maem</em>,<br>bahala kana mag husga oi</h1>
+    <p class="hero-sub">
+     HAHAHAHAHAAHAHAHAHAHAHAHA TABANGI KOO
+    </p>
+    <div class="scroll-hint">scroll down<span></span></div>
+  </div>
+</div>
+
+<!-- ── REASONS ── -->
+<section id="reasons">
+  <p class="section-label">Why you though?</p>
+  <h2 class="section-title">SYEMPREEE<br> IKAWWW NAGID NAAA HOOOO!</h2>
+
+  <div class="reasons-grid">
+    <!-- ✏️ Customize each card with real things about your crush! -->
+    <div class="reason-card">
+      <span class="icon">🌸</span>
+      <h3>Your smile</h3>
+      <p>It's genuinely the best thing in any room you walk into. I notice it every single time.</p>
+    </div>
+    <div class="reason-card">
+      <span class="icon">💬</span>
+      <h3>Talking to you</h3>
+      <p>Every conversation leaves me happier than before it started. That's rare.</p>
+    </div>
+    <div class="reason-card">
+      <span class="icon">✨</span>
+      <h3>The little things</h3>
+      <p>The way you laugh. The way you care. The small details that only you have.</p>
+    </div>
+    <div class="reason-card">
+      <span class="icon">🤍</span>
+      <h3>How kind you are</h3>
+      <p>You're genuinely good to people. That kind of heart is hard to find.</p>
+    </div>
+    <div class="reason-card">
+      <span class="icon">🎵</span>
+      <h3>Your vibe</h3>
+      <p>Your taste, your energy, your whole personality — it just does something to me.</p>
+    </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── LETTER ── -->
+<section id="letter">
+  <p class="section-label">From my puso ng saging</p>
+  <h2 class="section-title">Grabe mamsh<br>bahala na si batman</h2>
+
+  <div class="letter-box">
+    <!-- ✏️ Rewrite this in your own words! -->
+    <p>
+      I don't know exactly when it happened — somewhere between all the laughs and the small moments we had, I keep replaying
+      in my head. But I know this: you make everything feel a little brighter just by being around.
+    </p>
+    <p>
+      
+    </p>
+    <p>
+      
+    </p>
+    <p class="sig"></p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── RESPONSE ── -->
+<script>
+  /* ── Floating particle canvas ── */
+  const canvas = document.getElementById('canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const SYMBOLS = ['❤', '♡', '✦', '·', '✿', '꩜'];
+
+  class Particle {
+    constructor() { this.reset(true); }
+    reset(init = false) {
+      this.x    = Math.random() * W;
+      this.y    = init ? Math.random() * H : H + 20;
+      this.sym  = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+      this.size = 10 + Math.random() * 14;
+      this.spd  = 0.4 + Math.random() * 0.8;
+      this.drift= (Math.random() - 0.5) * 0.4;
+      this.alpha= 0;
+      this.targetAlpha = 0.15 + Math.random() * 0.25;
+      this.fadingIn = true;
+      this.rot  = Math.random() * Math.PI * 2;
+      this.rotSpd = (Math.random() - 0.5) * 0.01;
+      this.color= `hsl(${330 + Math.random()*40}, 80%, ${70 + Math.random()*15}%)`;
+    }
+    update() {
+      this.y -= this.spd;
+      this.x += this.drift;
+      this.rot += this.rotSpd;
+      if (this.fadingIn) {
+        this.alpha += 0.005;
+        if (this.alpha >= this.targetAlpha) this.fadingIn = false;
+      } else if (this.y < H * 0.3) {
+        this.alpha -= 0.003;
+      }
+      if (this.alpha < 0 || this.y < -30) this.reset();
+    }
+    draw() {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, this.alpha);
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rot);
+      ctx.fillStyle = this.color;
+      ctx.font = `${this.size}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(this.sym, 0, 0);
+      ctx.restore();
+    }
+  }
+
+  for (let i = 0; i < 60; i++) particles.push(new Particle());
+
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  /* ── Scroll-reveal for reason cards ── */
+  const cards = document.querySelectorAll('.reason-card');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 100);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  cards.forEach(c => io.observe(c));
+
+  /* ── Envelope tap → open + play music ── */
+  const music = document.getElementById('bgMusic');
+  const musicNote = document.getElementById('musicNote');
+
+  function openEnvelope() {
+    const wrap = document.getElementById('envelopeWrap');
+    const env  = document.getElementById('envelope');
+    const content = document.getElementById('heroContent');
+
+    // already opened
+    if (env.classList.contains('opened')) return;
+
+    // open envelope
+    env.classList.add('opened');
+    wrap.classList.add('opened-wrap');
+
+    // hide tap hint
+    const hint = wrap.querySelector('.tap-hint');
+    if (hint) hint.style.opacity = '0';
+
+    // reveal hero text
+    setTimeout(() => content.classList.add('revealed'), 600);
+
+    // play music from 9s
+    music.currentTime = 9;
+    music.volume = 0.7;
+    music.play().then(() => {
+      musicNote.style.opacity = '1';
+      setTimeout(() => { musicNote.style.opacity = '0'; }, 4000);
+    }).catch(() => {});
+  }
+
+  /* ── Response buttons ── */
+  function answer(choice) {
+    document.getElementById('question-area').style.display = 'none';
+    const el = document.getElementById('resp-' + choice);
+    el.classList.remove('ans-hidden');
+    el.classList.add('ans-visible');
+
+    if (choice === 'yes') {
+      for (let i = 0; i < 30; i++) particles.push(new Particle());
+    }
+  }
+</script>
+</body>
+</html>
